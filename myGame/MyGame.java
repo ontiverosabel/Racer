@@ -26,9 +26,9 @@ public class MyGame extends VariableFrameRateGame
 	private int counter=0;
 	private double lastFrameTime, currFrameTime, elapsTime;
 
-	private GameObject dol;
-	private ObjShape dolS;
-	private TextureImage doltx;
+	private GameObject dol, terr;
+	private ObjShape dolS, terrS;
+	private TextureImage doltx, grass, heightmap;
 	private Light light1;
 
 	public MyGame() { super(); }
@@ -45,11 +45,14 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	dolS = new ImportedModel("dolphinHighPoly.obj");
+		terrS = new TerrainPlane(1000); //1000x1000
 	}
 
 	@Override
 	public void loadTextures()
 	{	doltx = new TextureImage("Dolphin_HighPolyUV.png");
+		heightmap = new TextureImage("tempHeightMap.jpg");
+		grass = new TextureImage("grass.jpg");
 	}
 
 	@Override
@@ -71,6 +74,18 @@ public class MyGame extends VariableFrameRateGame
 		initialScale = (new Matrix4f()).scaling(3.0f);
 		dol.setLocalTranslation(initialTranslation);
 		dol.setLocalScale(initialScale);
+
+		// build terrain object
+		terr = new GameObject(GameObject.root(), terrS, grass);
+		initialTranslation = (new Matrix4f()).translation(0f,0f,0f);
+		terr.setLocalTranslation(initialTranslation);
+		initialScale = (new Matrix4f()).scaling(20.0f, 1.0f, 20.0f);
+		terr.setLocalScale(initialScale);
+		terr.setHeightMap(heightmap);
+
+		// set tiling for terrain texture
+		terr.getRenderStates().setTiling(1);
+		terr.getRenderStates().setTileFactor(10);
 	}
 
 	@Override
@@ -129,6 +144,10 @@ public class MyGame extends VariableFrameRateGame
 		(engine.getHUDmanager()).setHUD1(dispStr1, hud1Color, 15, 15);
 		(engine.getHUDmanager()).setHUD2(dispStr2, hud2Color, 500, 15);
 		
+		// update altitude of dolphin based on height map
+		Vector3f loc = dol.getWorldLocation();
+		float height = terr.getHeight(loc.x(), loc.z());
+		dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
 		
 		
 		
