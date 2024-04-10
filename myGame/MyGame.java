@@ -1,15 +1,27 @@
 package myGame;
 
-import tage.*;
-import tage.input.InputManager;
-import tage.shapes.*;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-import java.lang.Math;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import javax.swing.*;
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
+import myGame.multiplayer.GhostManager;
+import myGame.multiplayer.ProtocolClient;
+import tage.Engine;
+import tage.GameObject;
+import tage.Light;
+import tage.ObjShape;
+import tage.TextureImage;
+import tage.VariableFrameRateGame;
+import tage.input.InputManager;
+import tage.input.action.AbstractInputAction;
+import tage.networking.IGameConnection.ProtocolType;
+import tage.shapes.ImportedModel;
+import tage.shapes.Sphere;
+import tage.shapes.TerrainPlane;
 
 
 
@@ -19,25 +31,44 @@ public class MyGame extends VariableFrameRateGame
 	private static InputManager im;
 
 	
+	
+	//Networking
+	private GhostManager gm;
+	private String serverAddress;
+	private int serverPort;
+	private ProtocolType serverProtocol;
+	private ProtocolClient protClient;
+	private boolean isClientConnected = false;
+	
 	private static Engine engine;
 	public static Engine getEngine() {return engine;}
 	
 	private boolean paused=false;
 	private int counter=0;
-	private double lastFrameTime, currFrameTime, elapsTime;
+	private double lastFrameTime, currFrameTime, elapsTime, prevTime;
 
-	private GameObject dol;
-	private ObjShape dolS;
-	private TextureImage doltx;
+	private GameObject dol, terr;
+	private ObjShape dolS, terrS, ghostS;
+	private TextureImage doltx, grass, heightmap, ghostT;
 	private Light light1;
 
-	public MyGame() { super(); }
+	public MyGame(String serverAddress, int serverPort, String protocol) { 
+		super(); 
+		gm = new GhostManager(this);
+		this.serverAddress = serverAddress;
+		this.serverPort = serverPort;
+		if(protocol.toUpperCase().compareTo("TCP") == 0)
+			this.serverProtocol = ProtocolType.TCP;
+		else
+			this.serverProtocol = ProtocolType.UDP;
+	
+	}
 
 	public static void main(String[] args)
-	{	MyGame game = new MyGame();
+	{	MyGame game = new MyGame(args[0], Integer.parseInt(args[1]), args[2]);
 		engine = new Engine(game);
 		im = engine.getInputManager();
-
+		
 		game.initializeSystem();
 		game.game_loop();
 	}
@@ -45,11 +76,16 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	dolS = new ImportedModel("dolphinHighPoly.obj");
+		ghostS = new Sphere();
+		terrS = new TerrainPlane(1000); //1000x1000
 	}
 
 	@Override
 	public void loadTextures()
 	{	doltx = new TextureImage("Dolphin_HighPolyUV.png");
+		heightmap = new TextureImage("tempHeightMap.jpg");
+		grass = new TextureImage("grass.jpg");
+		ghostT = new TextureImage("Dolphin_HighPolyUV_wireframe.png");
 	}
 
 	@Override
@@ -71,6 +107,18 @@ public class MyGame extends VariableFrameRateGame
 		initialScale = (new Matrix4f()).scaling(3.0f);
 		dol.setLocalTranslation(initialTranslation);
 		dol.setLocalScale(initialScale);
+
+		// build terrain object
+		terr = new GameObject(GameObject.root(), terrS, grass);
+		initialTranslation = (new Matrix4f()).translation(0f,0f,0f);
+		terr.setLocalTranslation(initialTranslation);
+		initialScale = (new Matrix4f()).scaling(20.0f, 1.0f, 20.0f);
+		terr.setLocalScale(initialScale);
+		terr.setHeightMap(heightmap);
+
+		// set tiling for terrain texture
+		terr.getRenderStates().setTiling(1);
+		terr.getRenderStates().setTileFactor(10);
 	}
 
 	@Override
@@ -90,7 +138,7 @@ public class MyGame extends VariableFrameRateGame
 
 
 		// ------------- inputs section ------------------
-		FwdAction fwdAction = new FwdAction(dol);
+		FwdAction fwdAction = new FwdAction(this, protClient);
 		TurnAction yawAction = new TurnAction(dol);
 		//PitchAction pitchAction = new PitchAction(dol);
 		//RideAction ride = new RideAction(dol);
@@ -106,9 +154,28 @@ public class MyGame extends VariableFrameRateGame
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.S, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		// ------------- positioning the camera -------------
 		(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,5));
-	
+		setupNetworking();
 	}
 
+	
+	private void setupNetworking()
+	{ 
+		System.out.print("SETTING UP");
+		isClientConnected = false;
+		try{
+			protClient = new ProtocolClient(InetAddress.getByName(serverAddress), serverPort, serverProtocol, this);
+	} catch (UnknownHostException e) { e.printStackTrace();
+	} catch (IOException e) { e.printStackTrace(); }
+		if (protClient == null){ 
+			System.out.println("missing protocol host"); }
+		else{ // ask client protocol to send initial join message
+	// to server, with a unique identifier for this client
+	protClient.sendJoinMessage();
+	System.out.print(isClientConnected);
+	} }
+	
+	
+	
 	@Override
 	public void update()
 	{	
@@ -129,12 +196,25 @@ public class MyGame extends VariableFrameRateGame
 		(engine.getHUDmanager()).setHUD1(dispStr1, hud1Color, 15, 15);
 		(engine.getHUDmanager()).setHUD2(dispStr2, hud2Color, 500, 15);
 		
+		// update altitude of dolphin based on height map
+		Vector3f loc = dol.getWorldLocation();
+		float height = terr.getHeight(loc.x(), loc.z());
+		dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
 		
-		
+		double elapsedTime = System.currentTimeMillis() - prevTime;
+		prevTime = System.currentTimeMillis();
+		processNetworking((float)elapsedTime);
 		
 		
 	}
 
+	protected void processNetworking(float elapsTime) {
+		//Process packets recieved by the client from the server
+		if(protClient != null) protClient.processPackets();
+	}
+	
+	
+	
 	@Override
 	public void keyPressed(KeyEvent e)
 	{	switch (e.getKeyCode())
@@ -158,4 +238,22 @@ public class MyGame extends VariableFrameRateGame
 		}
 		super.keyPressed(e);
 	}
+
+	public GameObject getAvatar() { return dol; }
+	public ObjShape getGhostShape() { return ghostS; }
+	public TextureImage getGhostTexture() { return ghostT; }
+	public GhostManager getGhostManager() { return gm; }
+	public Vector3f getPlayerPosition() { return dol.getWorldLocation(); }
+	public void setIsConnected(boolean value) { this.isClientConnected = value; }
+	
+	private class SendCloseConnectionPacketAction extends AbstractInputAction
+	{	@Override
+		public void performAction(float time, net.java.games.input.Event evt) 
+		{	if(protClient != null && isClientConnected == true)
+			{	protClient.sendByeMessage();
+			}
+		}
+	}
+	
+	
 }

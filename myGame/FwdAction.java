@@ -2,6 +2,7 @@ package myGame;
 
 import org.joml.Vector3f;
 
+import myGame.multiplayer.ProtocolClient;
 import net.java.games.input.Event;
 import tage.Camera;
 import tage.GameObject;
@@ -9,13 +10,18 @@ import tage.input.action.AbstractInputAction;
 
 public class FwdAction extends AbstractInputAction{
 	private Camera cam = (MyGame.getEngine().getRenderSystem().getViewport("MAIN").getCamera());
-	private GameObject obj;
-	public FwdAction(GameObject obj) {
-		this.obj = obj;
+	private GameObject avatar;
+	MyGame game;
+	private ProtocolClient protClient;
+	
+	public FwdAction(MyGame g, ProtocolClient p) {
+		game = g;
+		protClient = p;
 	}
 	@Override
 	public void performAction(float time, Event e)
 	{ 
+		avatar = game.getAvatar();
 		float keyValue = e.getValue();
     	if(keyValue > -.9 && keyValue < .9)return; 
 
@@ -25,29 +31,30 @@ public class FwdAction extends AbstractInputAction{
 	    if ("W".equals(keyName) || keyValue < 0 &&!"S".equals(keyName)) {
 	    		// deadzone)
 	    	
-			fwd = obj.getWorldForwardVector();
-			loc = obj.getWorldLocation();
+			fwd = avatar.getWorldForwardVector();
+			loc = avatar.getWorldLocation();
 			newLocation = loc.add(fwd.mul(.02f));
 			//if(checkDist(newLocation, 5)) {
-			obj.setLocalLocation(newLocation);
+			avatar.setLocalLocation(newLocation);
+			protClient.sendMoveMessage(avatar.getWorldLocation());
 			
 			
 			
 			//checkCollisionWithAny(obj);
 			//}
 	    } else if ("S".equals(keyName) || keyValue > 0 && !"W".equals(keyName)) {
-			fwd = obj.getWorldForwardVector();
-			loc = obj.getWorldLocation();
+			fwd = avatar.getWorldForwardVector();
+			loc = avatar.getWorldLocation();
 			newLocation = loc.sub(fwd.mul(.02f));
 			//if(checkDist(newLocation, 5)) {
-				obj.setLocalLocation(newLocation);
+				avatar.setLocalLocation(newLocation);
 				//checkCollisionWithAny(obj);
 				//}		
 			}
-	    Vector3f loc1 = obj.getWorldLocation();
-		Vector3f fwd1 = obj.getWorldForwardVector();
-		Vector3f up = obj.getWorldUpVector();
-		Vector3f right = obj.getWorldRightVector();
+	    Vector3f loc1 = avatar.getWorldLocation();
+		Vector3f fwd1 = avatar.getWorldForwardVector();
+		Vector3f up = avatar.getWorldUpVector();
+		Vector3f right = avatar.getWorldRightVector();
 }
 	/*
 	public boolean checkDist(Vector3f objectLocation, float distanceThreshold) {
