@@ -48,8 +48,13 @@ public class MyGame extends VariableFrameRateGame
 	private double lastFrameTime, currFrameTime, elapsTime, prevTime;
 
 	private GameObject dol, terr;
+<<<<<<< HEAD
 	private ObjShape dolS, terrS, ghostS;
 	private TextureImage doltx, grass, heightmap, ghostT;
+=======
+	private ObjShape dolS, terrS;
+	private TextureImage doltx, grass, heightmap;
+>>>>>>> 800732825cd6f29ce3fee08c913390b484e98848
 	private Light light1;
 
 	public MyGame(String serverAddress, int serverPort, String protocol) { 
@@ -75,17 +80,27 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void loadShapes()
+<<<<<<< HEAD
 	{	dolS = new ImportedModel("dolphinHighPoly.obj");
 		ghostS = new Sphere();
+=======
+	{	dolS = new ImportedModel("placeholder_guy.obj");
+>>>>>>> 800732825cd6f29ce3fee08c913390b484e98848
 		terrS = new TerrainPlane(1000); //1000x1000
 	}
 
 	@Override
 	public void loadTextures()
+<<<<<<< HEAD
 	{	doltx = new TextureImage("Dolphin_HighPolyUV.png");
 		heightmap = new TextureImage("tempHeightMap.jpg");
 		grass = new TextureImage("grass.jpg");
 		ghostT = new TextureImage("Dolphin_HighPolyUV_wireframe.png");
+=======
+	{	doltx = new TextureImage("placeholder_uv.png");
+		heightmap = new TextureImage("tempHeightMap.jpg");
+		grass = new TextureImage("grass.jpg");
+>>>>>>> 800732825cd6f29ce3fee08c913390b484e98848
 	}
 
 	@Override
@@ -102,9 +117,9 @@ public class MyGame extends VariableFrameRateGame
 	{	Matrix4f initialTranslation, initialScale;
 
 		// build dolphin in the center of the window
-		dol = new GameObject(GameObject.root(), dolS, doltx);
-		initialTranslation = (new Matrix4f()).translation(0,0,0);
-		initialScale = (new Matrix4f()).scaling(3.0f);
+		dol = new GameObject(GameObject.root(), dolS);
+		initialTranslation = (new Matrix4f()).translation(0,5,0);
+		initialScale = (new Matrix4f()).scaling(0.25f);
 		dol.setLocalTranslation(initialTranslation);
 		dol.setLocalScale(initialScale);
 
@@ -200,10 +215,15 @@ public class MyGame extends VariableFrameRateGame
 		Vector3f loc = dol.getWorldLocation();
 		float height = terr.getHeight(loc.x(), loc.z());
 		dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
+<<<<<<< HEAD
 		
 		double elapsedTime = System.currentTimeMillis() - prevTime;
 		prevTime = System.currentTimeMillis();
 		processNetworking((float)elapsedTime);
+=======
+		//positionCameraBehindAvatar();
+		
+>>>>>>> 800732825cd6f29ce3fee08c913390b484e98848
 		
 		
 	}
