@@ -75,14 +75,14 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void loadShapes()
-	{	dolS = new ImportedModel("dolphinHighPoly.obj");
+	{	dolS = new ImportedModel("placeholder_guy.obj");
 		ghostS = new Sphere();
 		terrS = new TerrainPlane(1000); //1000x1000
 	}
 
 	@Override
 	public void loadTextures()
-	{	doltx = new TextureImage("Dolphin_HighPolyUV.png");
+	{	doltx = new TextureImage("placeholder_uv.png");
 		heightmap = new TextureImage("tempHeightMap.jpg");
 		grass = new TextureImage("grass.jpg");
 		ghostT = new TextureImage("Dolphin_HighPolyUV_wireframe.png");
@@ -104,13 +104,13 @@ public class MyGame extends VariableFrameRateGame
 		// build dolphin in the center of the window
 		dol = new GameObject(GameObject.root(), dolS, doltx);
 		initialTranslation = (new Matrix4f()).translation(0,0,0);
-		initialScale = (new Matrix4f()).scaling(3.0f);
+		initialScale = (new Matrix4f()).scaling(0.25f);
 		dol.setLocalTranslation(initialTranslation);
 		dol.setLocalScale(initialScale);
 
 		// build terrain object
 		terr = new GameObject(GameObject.root(), terrS, grass);
-		initialTranslation = (new Matrix4f()).translation(0f,0f,0f);
+		initialTranslation = (new Matrix4f()).translation(0f,-1f,0f);
 		terr.setLocalTranslation(initialTranslation);
 		initialScale = (new Matrix4f()).scaling(20.0f, 1.0f, 20.0f);
 		terr.setLocalScale(initialScale);
