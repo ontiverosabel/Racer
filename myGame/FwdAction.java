@@ -36,9 +36,10 @@ public class FwdAction extends AbstractInputAction{
 			newLocation = loc.add(fwd.mul(.02f));
 			//if(checkDist(newLocation, 5)) {
 			avatar.setLocalLocation(newLocation);
-			protClient.sendMoveMessage(avatar.getWorldLocation());
-			
-			
+			try {
+				protClient.sendMoveMessage(avatar.getWorldLocation());
+			}catch(NullPointerException ex) {
+			}			
 			
 			//checkCollisionWithAny(obj);
 			//}
@@ -48,6 +49,10 @@ public class FwdAction extends AbstractInputAction{
 			newLocation = loc.sub(fwd.mul(.02f));
 			//if(checkDist(newLocation, 5)) {
 				avatar.setLocalLocation(newLocation);
+				try {
+					protClient.sendMoveMessage(avatar.getWorldLocation());
+				}catch(NullPointerException ex) {
+				}
 				//checkCollisionWithAny(obj);
 				//}		
 			}

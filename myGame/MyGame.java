@@ -135,11 +135,12 @@ public class MyGame extends VariableFrameRateGame
 		currFrameTime = System.currentTimeMillis();
 		elapsTime = 0.0;
 		(engine.getRenderSystem()).setWindowDimensions(1900,1000);
+		setupNetworking();
 
 
 		// ------------- inputs section ------------------
 		FwdAction fwdAction = new FwdAction(this, protClient);
-		TurnAction yawAction = new TurnAction(dol);
+		TurnAction yawAction = new TurnAction(this, protClient);
 		//PitchAction pitchAction = new PitchAction(dol);
 		//RideAction ride = new RideAction(dol);
 		//FeedAction feed = new FeedAction();
@@ -154,7 +155,6 @@ public class MyGame extends VariableFrameRateGame
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.S, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		// ------------- positioning the camera -------------
 		(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,5));
-		setupNetworking();
 	}
 
 	
