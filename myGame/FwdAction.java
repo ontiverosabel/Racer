@@ -33,21 +33,26 @@ public class FwdAction extends AbstractInputAction{
 	    	
 			fwd = avatar.getWorldForwardVector();
 			loc = avatar.getWorldLocation();
-			newLocation = loc.add(fwd.mul(.02f));
+			newLocation = loc.add(fwd.mul(.2f));
 			//if(checkDist(newLocation, 5)) {
 			avatar.setLocalLocation(newLocation);
-			protClient.sendMoveMessage(avatar.getWorldLocation());
-			
-			
+			try {
+				protClient.sendMoveMessage(avatar.getWorldLocation());
+			}catch(NullPointerException ex) {
+			}			
 			
 			//checkCollisionWithAny(obj);
 			//}
 	    } else if ("S".equals(keyName) || keyValue > 0 && !"W".equals(keyName)) {
 			fwd = avatar.getWorldForwardVector();
 			loc = avatar.getWorldLocation();
-			newLocation = loc.sub(fwd.mul(.02f));
+			newLocation = loc.sub(fwd.mul(.2f));
 			//if(checkDist(newLocation, 5)) {
 				avatar.setLocalLocation(newLocation);
+				try {
+					protClient.sendMoveMessage(avatar.getWorldLocation());
+				}catch(NullPointerException ex) {
+				}
 				//checkCollisionWithAny(obj);
 				//}		
 			}
