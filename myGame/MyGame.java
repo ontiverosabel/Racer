@@ -19,6 +19,7 @@ import tage.VariableFrameRateGame;
 import tage.input.InputManager;
 import tage.input.action.AbstractInputAction;
 import tage.networking.IGameConnection.ProtocolType;
+import tage.shapes.AnimatedShape;
 import tage.shapes.ImportedModel;
 import tage.shapes.Sphere;
 import tage.shapes.TerrainPlane;
@@ -48,7 +49,8 @@ public class MyGame extends VariableFrameRateGame
 	private double lastFrameTime, currFrameTime, elapsTime, prevTime;
 
 	private GameObject dol, terr;
-	private ObjShape dolS, terrS, ghostS;
+	private ObjShape terrS, ghostS;
+	private AnimatedShape dolS;
 	private TextureImage doltx, grass, heightmap, ghostT;
 	private Light light1;
 
@@ -75,14 +77,15 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void loadShapes()
-	{	dolS = new ImportedModel("placeholder_guy.obj");
+	{	dolS = new AnimatedShape("car.rkm", "car.rks");
+		dolS.loadAnimation("DRIVE", "car.rka");
 		ghostS = new Sphere();
 		terrS = new TerrainPlane(1000); //1000x1000
 	}
 
 	@Override
 	public void loadTextures()
-	{	doltx = new TextureImage("placeholder_uv.png");
+	{	doltx = new TextureImage("car_tex.png");
 		heightmap = new TextureImage("tempHeightMap.jpg");
 		grass = new TextureImage("grass.jpg");
 		ghostT = new TextureImage("Dolphin_HighPolyUV_wireframe.png");
@@ -155,6 +158,9 @@ public class MyGame extends VariableFrameRateGame
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.S, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		// ------------- positioning the camera -------------
 		(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,5));
+
+		//play animation
+		dolS.playAnimation("DRIVE", 0.5f, AnimatedShape.EndType.LOOP, 0);
 	}
 
 	
@@ -200,6 +206,9 @@ public class MyGame extends VariableFrameRateGame
 		Vector3f loc = dol.getWorldLocation();
 		float height = terr.getHeight(loc.x(), loc.z());
 		dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
+
+		//update animation
+		dolS.updateAnimation();
 		
 		double elapsedTime = System.currentTimeMillis() - prevTime;
 		prevTime = System.currentTimeMillis();
