@@ -15,6 +15,7 @@ import tage.VariableFrameRateGame;
 
 public class GhostManager {
 	private MyGame game;
+	GhostAvatar newAvatar;
 	private Vector<GhostAvatar> ghostAvs = new Vector<GhostAvatar>();
 	public GhostManager(VariableFrameRateGame vfrg)
 	{ game = (MyGame)vfrg;
@@ -25,12 +26,18 @@ public class GhostManager {
 	{
 		ObjShape s = game.getGhostShape();
 		TextureImage t = game.getGhostTexture();
-		GhostAvatar newAvatar = new GhostAvatar(id, s, t, p);
+		newAvatar = new GhostAvatar(id, s, t, p);
 		Matrix4f initialScale = (new Matrix4f()).scaling(0.25f);
 		newAvatar.setLocalScale(initialScale);
 		ghostAvs.add(newAvatar);
 	}
 	
+	public void changeShape(ObjShape s) {
+		newAvatar.setShape(s);
+	}
+	public void changeTex(TextureImage t) {
+		newAvatar.setTextureImage(t);
+	}
 	
 	
 	public void removeGhostAvatar(UUID id)
@@ -44,7 +51,7 @@ public class GhostManager {
 	} }
 	
 	
-	private GhostAvatar findAvatar(UUID id)
+	public GhostAvatar findAvatar(UUID id)
 	{ GhostAvatar ghostAvatar;
 	Iterator<GhostAvatar> it = ghostAvs.iterator();
 	while(it.hasNext())

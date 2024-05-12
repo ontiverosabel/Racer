@@ -1,5 +1,6 @@
 package myGame;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import myGame.multiplayer.ProtocolClient;
@@ -12,11 +13,22 @@ public class FwdAction extends AbstractInputAction{
 	private Camera cam = (MyGame.getEngine().getRenderSystem().getViewport("MAIN").getCamera());
 	private GameObject avatar;
 	MyGame game;
+	private float vals[] = new float[16];
+
 	private ProtocolClient protClient;
 	
 	public FwdAction(MyGame g, ProtocolClient p) {
 		game = g;
 		protClient = p;
+	}
+	private double[] toDoubleArray(float[] arr) {
+		if(arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for(int i = 0; i < n; i++) {
+			ret[i] = (double)arr[i];
+		}
+		return ret;	
 	}
 	@Override
 	public void performAction(float time, Event e)
@@ -36,6 +48,12 @@ public class FwdAction extends AbstractInputAction{
 			newLocation = loc.add(fwd.mul(.2f));
 			//if(checkDist(newLocation, 5)) {
 			avatar.setLocalLocation(newLocation);
+	        // Update physics properties if needed
+	        if (avatar.getPhysicsObject() != null) {
+	        	Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
+				double[] tempTransform = toDoubleArray(translation.get(vals));
+				avatar.getPhysicsObject().setTransform(tempTransform);	      
+				}
 			try {
 				protClient.sendMoveMessage(avatar.getWorldLocation());
 			}catch(NullPointerException ex) {
@@ -49,6 +67,11 @@ public class FwdAction extends AbstractInputAction{
 			newLocation = loc.sub(fwd.mul(.2f));
 			//if(checkDist(newLocation, 5)) {
 				avatar.setLocalLocation(newLocation);
+				if (avatar.getPhysicsObject() != null) {
+		        	Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
+					double[] tempTransform = toDoubleArray(translation.get(vals));
+					avatar.getPhysicsObject().setTransform(tempTransform);	        
+					}
 				try {
 					protClient.sendMoveMessage(avatar.getWorldLocation());
 				}catch(NullPointerException ex) {

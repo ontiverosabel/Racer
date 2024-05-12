@@ -142,4 +142,10 @@ private class OrbitElevationAction  extends AbstractInputAction {
         updateCameraPosition();
     }
 }
+
+/** Changes avatar camera looks at */
+public void setAvatar(GameObject newAvatar) {
+	avatar=newAvatar;
+}
+
 }

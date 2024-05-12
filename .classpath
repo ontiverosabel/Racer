@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="C:/javagaming/joml/joml-1.10.5.jar"/>
 	<classpathentry kind="lib" path="C:/javagaming/vecmath/vecmath.jar"/>
 	<classpathentry kind="lib" path="C:/javagaming/jinput/jinput-2.0.9-natives-all.jar"/>
+	<classpathentry kind="lib" path="C:/javagaming"/>
 	<classpathentry kind="output" path=""/>
 </classpath>

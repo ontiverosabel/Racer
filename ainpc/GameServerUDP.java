@@ -78,7 +78,11 @@ public class GameServerUDP extends GameConnectionServer<UUID>
 				UUID clientID = UUID.fromString(messageTokens[1]);
 				handleNearTiming(clientID);
 			}
-		
+			if(messageTokens[0].compareTo("changeAvatar") == 0) {
+				UUID clientID = UUID.fromString(messageTokens[1]);
+				String color = messageTokens[2];
+				handleGhostChange(clientID, color);
+			}
 		}	}
 	
 	public void handleNearTiming(UUID clientID) {
@@ -210,6 +214,20 @@ public class GameServerUDP extends GameConnectionServer<UUID>
 		catch (IOException e) 
 		{	e.printStackTrace();
 	}	}
+	
+	public void handleGhostChange(UUID id, String color)
+	{	try 
+		{	
+		System.out.println("handling ghost change");
+		String message = new String("changeAvatar," + id.toString());
+		message += "," + color;
+		sendPacketToAll(message);
+		} 
+		catch (IOException e) 
+		{	e.printStackTrace();
+	}	}
+	
+	
 	public void sendNPCInfo() {
 		try 
 		{	

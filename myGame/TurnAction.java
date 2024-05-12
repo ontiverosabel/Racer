@@ -1,6 +1,8 @@
 package myGame;
 
 
+import org.joml.Matrix4f;
+
 import myGame.multiplayer.ProtocolClient;
 import net.java.games.input.Event;
 import tage.GameObject;
@@ -10,6 +12,7 @@ public class TurnAction extends AbstractInputAction{
 	private MyGame game;
 	private GameObject avatar;
 	private ProtocolClient protClient;
+	private float vals[] = new float[16];
 
 	 float yawAdjustmentSpeed = 0.1f;
      float yawAdjustment = 0.0f;
@@ -18,7 +21,15 @@ public class TurnAction extends AbstractInputAction{
  	{	game = g;
  		protClient = p;
  	}
- 	
+	private double[] toDoubleArray(float[] arr) {
+		if(arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for(int i = 0; i < n; i++) {
+			ret[i] = (double)arr[i];
+		}
+		return ret;	
+	}
 	@Override
 	public void performAction(float time, Event e) {
 			avatar = game.getAvatar();
@@ -30,6 +41,7 @@ public class TurnAction extends AbstractInputAction{
 	        if ("D".equals(keyName) || keyValue > 0 &&!"A".equals(keyName)) {
 	        	yawAdjustment += yawAdjustmentSpeed;
 	            avatar.setWorldYaw(-1);
+
 				try {
 					protClient.sendMoveMessage(avatar.getWorldLocation());
 				}catch(NullPointerException ex) {
@@ -39,6 +51,7 @@ public class TurnAction extends AbstractInputAction{
 	        if ("A".equals(keyName)|| keyValue < 0 && !"D".equals(keyName)) {
 	        	yawAdjustment -= yawAdjustmentSpeed;
 	            avatar.setWorldYaw(1);
+	            
 
 	        }
 	}

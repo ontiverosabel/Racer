@@ -1,15 +1,14 @@
 package myGame.multiplayer;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.UUID;
-import java.util.Vector;
-import org.joml.*;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import myGame.MyGame;
-import tage.*;
+import tage.GameObject;
 import tage.networking.client.GameConnectionClient;
 
 public class ProtocolClient extends GameConnectionClient
@@ -17,7 +16,7 @@ public class ProtocolClient extends GameConnectionClient
 	private MyGame game;
 	private GhostManager ghostManager;
 	private UUID id;
-	private GhostNPC ghostNPC;
+	private GhostNPC ghostNPC, blueNPC, redNPC;
 	
 	public ProtocolClient(InetAddress remoteAddr, int remotePort, ProtocolType protocolType, MyGame game) throws IOException 
 	{	super(remoteAddr, remotePort, protocolType);
@@ -57,6 +56,7 @@ public class ProtocolClient extends GameConnectionClient
 			{	// remove ghost avatar with id = remoteId
 				// Parse out the id into a UUID
 				UUID ghostID = UUID.fromString(messageTokens[1]);
+				System.out.print("leaving......");
 				ghostManager.removeGhostAvatar(ghostID);
 			}
 			
@@ -78,6 +78,8 @@ public class ProtocolClient extends GameConnectionClient
 
 				try
 				{	ghostManager.createGhost(ghostID, ghostPosition);
+				game.resetAvatar();
+				game.setIsConnected(true);
 				}	catch (IOException e)
 				{	System.out.println("error creating ghost avatar");
 				}
@@ -110,8 +112,6 @@ public class ProtocolClient extends GameConnectionClient
 				ghostManager.updateGhostAvatar(ghostID, ghostPosition);
 	}	
 		if(messageTokens[0].compareTo("createNPC") == 0) {
-			System.out.println("created ghostq");
-
 			Vector3f ghostPosition = new Vector3f(
 					Float.parseFloat(messageTokens[2]),
 					Float.parseFloat(messageTokens[3]),
@@ -129,6 +129,11 @@ public class ProtocolClient extends GameConnectionClient
 					Float.parseFloat(messageTokens[3]));
 			double gsize = Double.parseDouble(messageTokens[4]);
 			updateGhostNPC(ghostPosition, gsize);
+			}if(messageTokens[0].compareTo("changeAvatar") == 0) {
+				UUID ghostID = UUID.fromString(messageTokens[1]);
+				String color = messageTokens[2];
+				System.out.println("CHANGE AVATAR CALLED " + color);
+				game.changeGhost(ghostID, color);
 			}
 		
 		
@@ -149,12 +154,26 @@ public class ProtocolClient extends GameConnectionClient
 		{	e.printStackTrace();
 	}	}
 	
+	
+	public void sendAvatarMsg(String color) {
+		try {
+			String message = new String("changeAvatar," + id.toString());
+			message += "," + color;
+			sendPacket(new String(message));
+			
+		}catch (IOException e) {
+				e.printStackTrace();
+		}
+	}
+	
+	
 	// Informs the server that the client is leaving the server. 
 	// Message Format: (bye,localId)
 
 	public void sendByeMessage()
 	{	try 
 		{	sendPacket(new String("bye," + id.toString()));
+		System.out.print("leaving......");
 		} catch (IOException e) 
 		{	e.printStackTrace();
 	}	}
@@ -212,11 +231,11 @@ public class ProtocolClient extends GameConnectionClient
 	//GHOST NPC SECTION
 	private void createGhostNPC(Vector3f position) throws IOException{
 		if(ghostNPC == null){ 
-			ghostNPC = new GhostNPC(0, game.getNPCshape(), game.getNPCtexture(), position);
-			GhostNPC startNPC = new GhostNPC(1, game.getNPCshape(), game.getNPCtexture(), game.getAvatar().getLocalLocation().sub(5, -2, -5));
-			
+			ghostNPC = new GhostNPC(0, game.getBlueNPCshape(), game.getBlueNPCtexture(), position);
+			redNPC = new GhostNPC(1, game.getRedNPCshape(), game.getRedNPCtexture(), game.getAvatar().getLocalLocation().sub(-10, -1, 0));
+			blueNPC = new GhostNPC(2, game.getBlueNPCshape(), game.getBlueNPCtexture(), game.getAvatar().getLocalLocation().sub(-10, -1, 5));	
+			game.setupNPCPhys();
 		}
-		
 	}
 	
 	private void updateGhostNPC(Vector3f position, double gsize) {
@@ -233,6 +252,12 @@ public class ProtocolClient extends GameConnectionClient
 			if(gsize == 1.0) gs = false; else gs = true;
 			ghostNPC.setSize(gs);
 		
+	}
+	public GameObject getBlueNPC() {
+		return blueNPC;
+	}
+	public GameObject getRedNPC() {
+		return redNPC;
 	}
 	
 	

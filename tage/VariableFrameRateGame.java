@@ -102,6 +102,7 @@ public abstract class VariableFrameRateGame implements KeyListener, MouseListene
 	*/
 	public void shutdown()
 	{	System.out.println("shutting down");
+	
 	}
 
 	/**
