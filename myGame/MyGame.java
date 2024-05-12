@@ -20,6 +20,7 @@ import tage.CameraOrbit3D;
 import tage.Engine;
 import tage.GameObject;
 import tage.Light;
+import tage.Light.LightType;
 import tage.ObjShape;
 import tage.TextureImage;
 import tage.VariableFrameRateGame;
@@ -102,11 +103,11 @@ public class MyGame extends VariableFrameRateGame
 	private double lastFrameTime, currFrameTime, elapsTime, prevTime;
 	
 	private GameObject cube, jump;
-	private GameObject dol, terr, finishline, avatar,bluecar,redcar;
-	private ObjShape terrS, ghostS, cubeS, finishlineS, dolS;
+	private GameObject dol, terr, finishline, avatar,bluecar,redcar, trophy;
+	private ObjShape terrS, ghostS, cubeS, finishlineS, dolS, trophyS;
 	private AnimatedShape redCarS, blueCarS;
-	private TextureImage doltx, grass, heightmap, finishlinetx, ghostT, cubetx, bricktx, trampoline;
-	private Light light1;
+	private TextureImage doltx, grass, heightmap, finishlinetx, ghostT, cubetx, bricktx, trampoline, trophytx;
+	private Light light1, spotlight, positional;
 
 	public MyGame(String serverAddress, int serverPort, String protocol) { 
 		super(); 
@@ -138,6 +139,7 @@ public class MyGame extends VariableFrameRateGame
 		terrS = new TerrainPlane(1000); //1000x1000
 		cubeS = new Cube();
 		finishlineS = new Plane();
+		trophyS = new ImportedModel("dolphinHighPoly.obj");
 		
 		
 		blueNPCShape = new ImportedModel("car.obj");
@@ -164,7 +166,7 @@ public class MyGame extends VariableFrameRateGame
 		redCartx = new TextureImage("car_tex.png");
 		trampoline = new TextureImage("jump.jpg");
 		finishlinetx = new TextureImage("finishline.jpg");
-		
+		trophytx = new TextureImage("Dolphin_HighPolyUV.png");
 
 	}
 
@@ -211,6 +213,9 @@ public class MyGame extends VariableFrameRateGame
         finishline.setLocalTranslation((new Matrix4f()).translation(0, 1, 90));
          initialScale = (new Matrix4f()).scaling(50.0f, 1f, 1.5f);
         finishline.setLocalScale(initialScale);
+
+		//trophy object
+		trophy = new GameObject(GameObject.root(), trophyS, trophytx);
         
         // --------------- adding a ground plane ------------  
         // build terrain object
@@ -307,6 +312,18 @@ public class MyGame extends VariableFrameRateGame
 		light1 = new Light();
 		light1.setLocation(new Vector3f(5.0f, 4.0f, 2.0f));
 		(engine.getSceneGraph()).addLight(light1);
+
+		//spotlight
+		spotlight = new Light();
+		spotlight.setType(LightType.SPOTLIGHT);
+		spotlight.setLocation(new Vector3f(0f, 1f, 90f));
+		(engine.getSceneGraph()).addLight(spotlight);
+
+		//positional light
+		positional = new Light();
+		positional.setType(LightType.POSITIONAL);
+		positional.setLocation(new Vector3f(1f, 0, 0));
+		(engine.getSceneGraph()).addLight(positional);
 	}
 
 	@Override
@@ -375,13 +392,19 @@ public class MyGame extends VariableFrameRateGame
 		// ------------- inputs section ------------------
 		FwdAction fwdAction = new FwdAction(this, protClient);
 		TurnAction yawAction = new TurnAction(this, protClient);
-		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.Y, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.X, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+
+		//gamepad controls
+		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._4, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._7, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._6, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._5, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		
+		//keyboard controls
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.A, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.D, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.W, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.S, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		
 		// ------------- positioning the camera -------------
 		(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,5));
 		//dolS.playAnimation("DRIVE", 0.5f, AnimatedShape.EndType.LOOP, 0);
@@ -768,6 +791,9 @@ public class MyGame extends VariableFrameRateGame
 				break;
 			case KeyEvent.VK_4:
 				(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,0));
+				break;
+			case KeyEvent.VK_5:
+			spotlight.setLocation(new Vector3f(0f, 0f, 0f));
 				break;
 		}
 		super.keyPressed(e);
