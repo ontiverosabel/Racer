@@ -28,6 +28,8 @@ public class GhostManager {
 		TextureImage t = game.getGhostTexture();
 		newAvatar = new GhostAvatar(id, s, t, p);
 		Matrix4f initialScale = (new Matrix4f()).scaling(0.25f);
+	      Matrix4f initialTranslation = (new Matrix4f()).translation(10,2,-80);
+	      newAvatar.setLocalTranslation(initialTranslation);
 		newAvatar.setLocalScale(initialScale);
 		ghostAvs.add(newAvatar);
 	}

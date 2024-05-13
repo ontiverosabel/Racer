@@ -45,12 +45,12 @@ public class NPCcontroller
 			long currentTime = System.nanoTime();
 			float elapsedThinkMilliSecs = (currentTime-lastThinkUpdateTime)/(1000000.0f);
 			float elapsedTickMilliSecs = (currentTime-lastTickUpdateTime)/(1000000.0f);
-			if (elapsedTickMilliSecs >= 25.0f)
+			if (elapsedTickMilliSecs >= 15.0f)
 			{ lastTickUpdateTime = currentTime;
 			npc.updateLocation();
 			server.sendNPCInfo();
 }
-			if (elapsedThinkMilliSecs >= 250.0f)
+			if (elapsedThinkMilliSecs >= 150.0f)
 			{ lastThinkUpdateTime = currentTime;
 			bt.update(elapsedThinkMilliSecs);
 }

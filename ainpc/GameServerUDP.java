@@ -83,6 +83,10 @@ public class GameServerUDP extends GameConnectionServer<UUID>
 				String color = messageTokens[2];
 				handleGhostChange(clientID, color);
 			}
+			if(messageTokens[0].compareTo("winner") == 0) {
+				String color = messageTokens[1];
+				handleWinner(color);
+			}
 		}	}
 	
 	public void handleNearTiming(UUID clientID) {
@@ -203,7 +207,7 @@ public class GameServerUDP extends GameConnectionServer<UUID>
 	public void sendNPCstart(UUID clientID)
 	{	try 
 		{	
-		System.out.println("creating npc");
+		System.out.println("creating npcs");
 
 		String message = new String("createNPC," + clientID.toString());
 			message += "," + npcCtrl.getNPC().getX();
@@ -227,6 +231,16 @@ public class GameServerUDP extends GameConnectionServer<UUID>
 		{	e.printStackTrace();
 	}	}
 	
+	public void handleWinner(String color)
+	{	try 
+		{	
+		System.out.println("handling winner");
+		String message = new String("winner," + color);
+		sendPacketToAll(message);
+		} 
+		catch (IOException e) 
+		{	e.printStackTrace();
+	}	}
 	
 	public void sendNPCInfo() {
 		try 

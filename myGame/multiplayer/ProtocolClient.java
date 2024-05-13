@@ -16,7 +16,7 @@ public class ProtocolClient extends GameConnectionClient
 	private MyGame game;
 	private GhostManager ghostManager;
 	private UUID id;
-	private GhostNPC ghostNPC, blueNPC, redNPC;
+	private GhostNPC ghostNPC,ghostNPC2,ghostNPC3, blueNPC, redNPC;
 	
 	public ProtocolClient(InetAddress remoteAddr, int remotePort, ProtocolType protocolType, MyGame game) throws IOException 
 	{	super(remoteAddr, remotePort, protocolType);
@@ -32,8 +32,8 @@ public class ProtocolClient extends GameConnectionClient
 	{	
 		String strMessage = (String)message;
 		//System.out.println("message received -->" + strMessage);
+		try {
 		String[] messageTokens = strMessage.split(",");
-		
 		// Game specific protocol to handle the message
 		if(messageTokens.length > 0)
 		{
@@ -135,9 +135,16 @@ public class ProtocolClient extends GameConnectionClient
 				System.out.println("CHANGE AVATAR CALLED " + color);
 				game.changeGhost(ghostID, color);
 			}
+			if(messageTokens[0].compareTo("winner") == 0) {
+				String color = messageTokens[1];
+				System.out.println("Winner is " + color);
+				game.setWinner(color);
+			}
 		
 		
 		
+		}		}catch(NullPointerException e) {
+			
 		}	}
 	
 	// The initial message from the game client requesting to join the 
@@ -165,7 +172,16 @@ public class ProtocolClient extends GameConnectionClient
 				e.printStackTrace();
 		}
 	}
-	
+	public void sendWinnerMsg(String color) {
+		try {
+			String message = new String("winner");
+			message += "," + color;
+			sendPacket(new String(message));
+			
+		}catch (IOException e) {
+				e.printStackTrace();
+		}
+	}
 	
 	// Informs the server that the client is leaving the server. 
 	// Message Format: (bye,localId)
@@ -232,11 +248,21 @@ public class ProtocolClient extends GameConnectionClient
 	private void createGhostNPC(Vector3f position) throws IOException{
 		if(ghostNPC == null){ 
 			ghostNPC = new GhostNPC(0, game.getBlueNPCshape(), game.getBlueNPCtexture(), position);
+			ghostNPC2 = new GhostNPC(3, game.getBlueNPCshape(), game.getBlueNPCtexture(), position.add(15, 15, 15));
+			ghostNPC3 = new GhostNPC(4, game.getBlueNPCshape(), game.getBlueNPCtexture(), position.add(30,30,30));
+
 			redNPC = new GhostNPC(1, game.getRedNPCshape(), game.getRedNPCtexture(), game.getAvatar().getLocalLocation().sub(-10, -1, 0));
+			Matrix4f initialTranslation = (new Matrix4f()).translation(5,2,-59);
+			redNPC.setLocalTranslation(initialTranslation);
+	        
 			blueNPC = new GhostNPC(2, game.getBlueNPCshape(), game.getBlueNPCtexture(), game.getAvatar().getLocalLocation().sub(-10, -1, 5));	
+			 initialTranslation = (new Matrix4f()).translation(-5,2,-59);
+			blueNPC.setLocalTranslation(initialTranslation);
+	        
 			game.setupNPCPhys();
 		}
-	}
+	}	private float vals[] = new float[16];
+
 	
 	private void updateGhostNPC(Vector3f position, double gsize) {
 		boolean gs;
@@ -248,10 +274,34 @@ public class ProtocolClient extends GameConnectionClient
 			}
 		}
 			ghostNPC.setPosition(position);
-
+        	Matrix4f translation = new Matrix4f(ghostNPC.getLocalTranslation());
+			double[] tempTransform = toDoubleArray(translation.get(vals));
+			ghostNPC.getPhysicsObject().setTransform(tempTransform);	
+			
+			
+			ghostNPC2.setPosition(position.add(15, 0, 15));
+        	 translation = new Matrix4f(ghostNPC2.getLocalTranslation());
+        	 tempTransform = toDoubleArray(translation.get(vals));
+			ghostNPC2.getPhysicsObject().setTransform(tempTransform);	
+			
+			ghostNPC3.setPosition(position.add(30, 0, 30));
+       	 translation = new Matrix4f(ghostNPC3.getLocalTranslation());
+       	 tempTransform = toDoubleArray(translation.get(vals));
+			ghostNPC3.getPhysicsObject().setTransform(tempTransform);	
+			
+			
 			if(gsize == 1.0) gs = false; else gs = true;
 			ghostNPC.setSize(gs);
 		
+	}
+	private double[] toDoubleArray(float[] arr) {
+		if(arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for(int i = 0; i < n; i++) {
+			ret[i] = (double)arr[i];
+		}
+		return ret;	
 	}
 	public GameObject getBlueNPC() {
 		return blueNPC;
@@ -259,8 +309,15 @@ public class ProtocolClient extends GameConnectionClient
 	public GameObject getRedNPC() {
 		return redNPC;
 	}
-	
-	
+	public GameObject getNPC1() {
+		return ghostNPC;
+	}
+	public GameObject getNPC2() {
+		return ghostNPC2;
+	}
+	public GameObject getNPC3() {
+		return ghostNPC3;
+	}
 	
 	
 }

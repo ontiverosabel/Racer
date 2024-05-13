@@ -26,8 +26,8 @@ public class NPC {
 	public double getSize() { return size;}
 	
 	public void updateLocation() {
-		if(locationX > 10) dir =-0.1;
-		if(locationX < -10) dir=0.1;
+		if(locationX > 30) dir =-0.3;
+		if(locationX < -30) dir=0.3;
 		locationX = locationX+dir;
 	}
 }

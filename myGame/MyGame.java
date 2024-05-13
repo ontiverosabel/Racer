@@ -10,7 +10,6 @@ import java.util.UUID;
 
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import myGame.multiplayer.GhostManager;
@@ -20,6 +19,7 @@ import tage.CameraOrbit3D;
 import tage.Engine;
 import tage.GameObject;
 import tage.Light;
+import tage.Light.LightType;
 import tage.ObjShape;
 import tage.TextureImage;
 import tage.VariableFrameRateGame;
@@ -39,7 +39,6 @@ import tage.shapes.AnimatedShape;
 import tage.shapes.Cube;
 import tage.shapes.ImportedModel;
 import tage.shapes.Plane;
-import tage.shapes.RoomBox;
 import tage.shapes.Sphere;
 import tage.shapes.TerrainPlane;
 
@@ -48,8 +47,9 @@ import tage.shapes.TerrainPlane;
 public class MyGame extends VariableFrameRateGame
 {
 	
-	public boolean blue,red,jumping, start= false;
-	
+	public boolean blue,red,jumping, start, finished= false;
+	public String winner = "";
+	public String color = "";
 	public ArrayList<Integer> cubeIDS = new ArrayList<Integer>();
 	public ArrayList<Integer> jumpIDS = new ArrayList<Integer>();
 
@@ -72,7 +72,7 @@ public class MyGame extends VariableFrameRateGame
 	
 	//Sound
 	private IAudioManager audioMgr;
-	private Sound thumpSound, finishSound;
+	private Sound thumpSound, finishSound, bgsong;
 	
 
 	private int fluffyClouds, lakeislands; //skyboxes	
@@ -81,7 +81,7 @@ public class MyGame extends VariableFrameRateGame
 	
 	//Physics
 	private PhysicsEngine physicsEngine;
-	private PhysicsObject avatarPhys, RedNPCPhys, finishlinePhys, BlueNPCPhys, CubePhys, PlanePhys, trampPhys;
+	private PhysicsObject avatarPhys, RedNPCPhys, Npc1p, npc2p, npc3p, finishlinePhys, BlueNPCPhys, CubePhys, PlanePhys, trampPhys;
 	private boolean running = false;
 	private float vals[] = new float[16];
 	private int avatarUID, cubeUID, blueNPCUID, redNPCUID, wallsUID;
@@ -101,12 +101,12 @@ public class MyGame extends VariableFrameRateGame
 	private int counter=0;
 	private double lastFrameTime, currFrameTime, elapsTime, prevTime;
 	
-	private GameObject cube, jump;
+	private GameObject cube, jump, trophy;
 	private GameObject dol, terr, finishline, avatar,bluecar,redcar;
-	private ObjShape terrS, ghostS, cubeS, finishlineS, dolS;
+	private ObjShape terrS, ghostS, trophyS, cubeS, finishlineS, dolS;
 	private AnimatedShape redCarS, blueCarS;
-	private TextureImage doltx, grass, heightmap, finishlinetx, ghostT, cubetx, bricktx, trampoline;
-	private Light light1;
+	private TextureImage doltx, grass, trophytx, heightmap, finishlinetx, ghostT, cubetx, bricktx, trampoline;
+	private Light light1, spotlight, positional;
 
 	public MyGame(String serverAddress, int serverPort, String protocol) { 
 		super(); 
@@ -149,6 +149,7 @@ public class MyGame extends VariableFrameRateGame
 		blueCarS.loadAnimation("DRIVE", "car.rka");
 		redCarS = new AnimatedShape("car.rkm", "car.rks");
 		redCarS.loadAnimation("DRIVE", "car.rka");
+		trophyS = new ImportedModel("dolphinHighPoly.obj");
 	}
 
 	@Override
@@ -164,7 +165,7 @@ public class MyGame extends VariableFrameRateGame
 		redCartx = new TextureImage("car_tex.png");
 		trampoline = new TextureImage("jump.jpg");
 		finishlinetx = new TextureImage("finishline.jpg");
-		
+		trophytx = new TextureImage("Dolphin_HighPolyUV.png");
 
 	}
 
@@ -181,6 +182,8 @@ public class MyGame extends VariableFrameRateGame
 	public void buildObjects()
     {    Matrix4f initialTranslation, initialScale;
 
+    	trophy = new GameObject(GameObject.root(), trophyS, trophytx);
+    
         // build dolphin in the center of the window
         dol = new GameObject(GameObject.root(), dolS, doltx);
         initialTranslation = (new Matrix4f()).translation(10,2,-80);
@@ -307,22 +310,38 @@ public class MyGame extends VariableFrameRateGame
 		light1 = new Light();
 		light1.setLocation(new Vector3f(5.0f, 4.0f, 2.0f));
 		(engine.getSceneGraph()).addLight(light1);
+		
+		//spotlight
+				spotlight = new Light();
+				spotlight.setType(LightType.SPOTLIGHT);
+				spotlight.setLocation(new Vector3f(0f, 1f, 90f));
+				(engine.getSceneGraph()).addLight(spotlight);
+
+				//positional light
+				positional = new Light();
+				positional.setType(LightType.POSITIONAL);
+				positional.setLocation(new Vector3f(1f, 0, 0));
+				(engine.getSceneGraph()).addLight(positional);
+				
 	}
 
 	@Override
 	public void loadSounds() {
-		AudioResource resource1, resource2;
+		AudioResource resource1, resource2, resource3;
 		audioMgr = engine.getAudioManager();
 		resource1 = audioMgr.createAudioResource("assets/sounds/thump.wav", AudioResourceType.AUDIO_SAMPLE);
 		resource2 = audioMgr.createAudioResource("assets/sounds/finishlinesound.wav", AudioResourceType.AUDIO_SAMPLE);
-
+		resource3 = audioMgr.createAudioResource("assets/sounds/bg.wav", AudioResourceType.AUDIO_SAMPLE);
 		thumpSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, true);
 		thumpSound.initialize(audioMgr);
 		thumpSound.setMaxDistance(10.0f);
 		thumpSound.setMinDistance(0.5f);
 		thumpSound.setRollOff(5.0f);
 		
-		
+		bgsong = new Sound(resource3, SoundType.SOUND_MUSIC, 100, true);
+		bgsong.initialize(audioMgr);
+		bgsong.setVolume(25);
+		bgsong.play();
 		
 		finishSound = new Sound(resource2, SoundType.SOUND_EFFECT, 100, true);
 		finishSound.initialize(audioMgr);
@@ -356,6 +375,31 @@ public class MyGame extends VariableFrameRateGame
 		RedNPCPhys.setBounciness(0.2F);
 		protClient.getRedNPC().setPhysicsObject(RedNPCPhys);
 		redNPCUID = RedNPCPhys.getUID();
+		
+		//npc1
+		radius=2;
+		mass=100;
+		translation = new Matrix4f(protClient.getNPC1().getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		Npc1p = engine.getSceneGraph().addPhysicsCapsule(mass, tempTransform, radius, height);
+		Npc1p.setBounciness(0.2F);
+		protClient.getNPC1().setPhysicsObject(Npc1p);
+		
+		//npc2
+		translation = new Matrix4f(protClient.getNPC2().getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		npc2p = engine.getSceneGraph().addPhysicsCapsule(mass, tempTransform, radius, height);
+		npc2p.setBounciness(0.2F);
+		protClient.getNPC2().setPhysicsObject(npc2p);
+		
+		
+		//npc3
+		translation = new Matrix4f(protClient.getNPC3().getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		npc3p = engine.getSceneGraph().addPhysicsCapsule(mass, tempTransform, radius, height);
+		npc3p.setBounciness(0.2F);
+		protClient.getNPC3().setPhysicsObject(npc3p);
+		
 	}
 	
 	@Override
@@ -375,9 +419,13 @@ public class MyGame extends VariableFrameRateGame
 		// ------------- inputs section ------------------
 		FwdAction fwdAction = new FwdAction(this, protClient);
 		TurnAction yawAction = new TurnAction(this, protClient);
-		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.Y, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.X, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		
+		//gamepad controls
+				im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._4, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._7, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._6, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Button._5, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+
+				//keyboard controls
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.A, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.D, yawAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.W, fwdAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
@@ -443,7 +491,7 @@ public class MyGame extends VariableFrameRateGame
 		terr.setPhysicsObject(PlanePhys);
 		
 		engine.enableGraphicsWorldRender();
-		engine.enablePhysicsWorldRender();
+		//engine.enablePhysicsWorldRender();
 		finishSound.setLocation(finishline.getWorldLocation());
 		setEarParameters();		
 	}
@@ -464,7 +512,7 @@ public class MyGame extends VariableFrameRateGame
 		avatar=dol;
 		orbitController.setAvatar(dol);
 		setEarParameters();
-        Matrix4f initialTranslation = (new Matrix4f()).translation(50,10,50);
+        Matrix4f initialTranslation = (new Matrix4f()).translation(10,2,-80);
         avatar.setLocalTranslation(initialTranslation);
 		avatar.setPhysicsObject(avatarPhys);
 		avatar.getRenderStates().enableRendering();
@@ -540,6 +588,15 @@ public class MyGame extends VariableFrameRateGame
 		return ret;	
 	}
 
+	public void setWinner(String color) {
+		finished=true;
+		if(color.equalsIgnoreCase("blue")) {
+			winner="blue";
+		}else if(color.equalsIgnoreCase("red")){
+			winner="red";
+		}
+		System.out.println("winner is  " + color);
+	}
 	private void checkForCollisions() {
 		com.bulletphysics.dynamics.DynamicsWorld dynamicsWorld;
 		com.bulletphysics.collision.broadphase.Dispatcher dispatcher;
@@ -577,15 +634,33 @@ public class MyGame extends VariableFrameRateGame
 				
 				if(cubeIDS.contains(obj2.getUID()) || cubeIDS.contains(obj1.getUID())) {
 					System.out.print("cube collision");
-					applyBackwardForce();
+					applyBackwardForce(1.2f);
 					    }
 				if(jumpIDS.contains(obj2.getUID()) || jumpIDS.contains(obj1.getUID())) {
 					System.out.print("jump collision");
 					jumping=true;		
 					applyJumpForce(10);
-					//thumpSound.setLocation(cube.getWorldLocation());
+					thumpSound.setLocation(avatar.getWorldLocation());
 
-					    }
+			}
+				if(obj1.getUID() == finishlinePhys.getUID() || obj2.getUID() == finishlinePhys.getUID()) {
+					if(!finished) {
+						if(avatar == bluecar) {
+					protClient.sendWinnerMsg("blue");
+					}else if(avatar == redcar) {
+						protClient.sendWinnerMsg("red");
+
+					}
+					}
+				}
+				
+				if(obj1.getUID() == protClient.getNPC1().getPhysicsObject().getUID() || obj2.getUID() == protClient.getNPC1().getPhysicsObject().getUID()
+						|| obj1.getUID() == npc2p.getUID() || obj2.getUID() == npc2p.getUID()
+						|| obj1.getUID() == npc3p.getUID() || obj2.getUID() == npc3p.getUID()) {
+					System.out.println("CAR");
+					applyBackwardForce(75f);
+					
+				}
 				
 				else if(obj2.getUID() == PlanePhys.getUID()) {
 					    	jumping=false;
@@ -604,7 +679,7 @@ public class MyGame extends VariableFrameRateGame
 			System.out.print(gravityDown + " should be true");
 			}*/
 		break;
-		} } } 
+		} } }
 	}
 	
 	
@@ -692,15 +767,18 @@ public class MyGame extends VariableFrameRateGame
 		if((blue && red) && !start) {
 			start=true;
 			hud1 = "Objective: Reach the finish line.";
-	        spawnCubes(15, -100, 30, 1, 1, -50, 50);
-	        spawnTramps(6, -100, 100, 1, 1, -50, 50);
+	        spawnCubes(30, -100, 30, 1, 1, -50, 50);
+	        spawnTramps(15, -100, 100, 1, 1, -50, 50);
 			finishSound.play(finishSound.getVolume(), true);
 
-		}else {
+		}else{
 			hud1 = "Objective: 2 players must choose a car color.";
 		}
 		if(!isClientConnected) {
 			hud1 = "Objective: Single Player Mode.";
+		}
+		if(finished) {
+			hud1 = "Objective: Winner is " + winner;
 		}
 		(engine.getHUDmanager()).setHUD1(hud1, hud1Color, 15, 15);
 		(engine.getHUDmanager()).setHUD2(hud2, hud2Color, 500, 15);
@@ -743,32 +821,10 @@ public class MyGame extends VariableFrameRateGame
 	{	
 
 		switch (e.getKeyCode())
-		{	case KeyEvent.VK_SPACE:
-			if(!running) {
-			running=true;
-			}
-			
+		{	
+		case KeyEvent.VK_5:
+		spotlight.setLocation(new Vector3f(0f, 0f, 0f));
 			break;
-			case KeyEvent.VK_1:
-				int x = (int) avatar.getWorldLocation().x();
-				int y = (int) avatar.getWorldLocation().y();
-				int z = (int) avatar.getWorldLocation().z();
-
-				
-				//System.out.println(avatar.getWorldTranslation());
-				System.out.println("x: " + x + " y: " + y + " z: " + z);
-
-				break;
-			case KeyEvent.VK_2:
-				engine.getSceneGraph().setActiveSkyBoxTexture(lakeislands);
-				engine.getSceneGraph().setSkyBoxEnabled(true);
-				break;
-			case KeyEvent.VK_3:
-				engine.getSceneGraph().setSkyBoxEnabled(false);
-				break;
-			case KeyEvent.VK_4:
-				(engine.getRenderSystem().getViewport("MAIN").getCamera()).setLocation(new Vector3f(0,0,0));
-				break;
 		}
 		super.keyPressed(e);
 	}
@@ -797,10 +853,10 @@ public class MyGame extends VariableFrameRateGame
 	            velocity[1] = jumpForceMagnitude; // Set the upward velocity
 	            avatar.getPhysicsObject().setLinearVelocity(velocity);	        }
 	   
-public void applyBackwardForce() {
+public void applyBackwardForce(float force) {
 	Vector3f fwd = avatar.getWorldForwardVector();
 	Vector3f loc = avatar.getWorldLocation();
-	Vector3f newLocation = loc.sub(fwd.mul(1.2f));
+	Vector3f newLocation = loc.sub(fwd.mul(force));
 	
 	avatar.setLocalLocation(newLocation);
 	Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
